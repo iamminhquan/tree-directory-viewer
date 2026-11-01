@@ -1,8 +1,24 @@
-#include <stdio.h>
 #include <dirent.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+#define ANSI_COLOR_PINK "\x1b[38;5;213m"
+
+char *directory_color() { return ANSI_COLOR_PINK; }
+void reset_color() { printf("\033[0m"); }
+
+void print_file(const char *name, bool is_directory) {
+    if (is_directory) {
+        printf("%s%s\n", directory_color(), name);
+        reset_color();
+    } else {
+        printf("%s\n", name);
+    }
+}
 
 int traverse_dir(const char *path) {
-    DIR* directory = opendir(path);
+    DIR *directory = opendir(path);
     if (!directory) {
         perror("opendir");
         return -1;
@@ -10,16 +26,24 @@ int traverse_dir(const char *path) {
 
     struct dirent *entry;
     while ((entry = readdir(directory)) != NULL) {
-        const char* directory_name = entry->d_name;
-        printf("%s\n", directory_name);
+        const char *directory_name = entry->d_name;
+
+        // skip the . and .. directories
+        if (strcmp(directory_name, ".") == 0 ||
+            strcmp(directory_name, "..") == 0) {
+            continue;
+        }
 
         if (entry->d_type == DT_DIR) {
             // directory
+            print_file(directory_name, true);
         } else {
             // file
+            print_file(directory_name, false);
         }
     }
 
+    closedir(directory);
     return 0;
 }
 
